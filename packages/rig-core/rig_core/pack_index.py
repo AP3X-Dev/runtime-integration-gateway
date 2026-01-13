@@ -87,7 +87,7 @@ class PackIndex:
         return None
 
 
-DEFAULT_INDEX_URL = "https://raw.githubusercontent.com/rig-project/rig-index/main/index.json"
+DEFAULT_INDEX_URL = "https://raw.githubusercontent.com/AP3X-Dev/runtime-integration-gateway/master/specs/pack-index-example.json"
 
 
 class PackIndexClient:
