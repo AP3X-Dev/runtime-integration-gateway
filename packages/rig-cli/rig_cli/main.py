@@ -22,7 +22,7 @@ from rig_core.secrets import SecretsStore
 from rig_core.node_bridge import NodeRunnerClient, make_node_tool_impl
 from rig_protocol_rgp.server import create_app
 
-from rig_cli.config import RigConfig, load_config, write_config
+from rig_cli.config import RigConfig, load_config, write_config, default_config, PackMetadata
 from rig_cli.installer import PackInstaller
 
 app = typer.Typer(add_completion=False)
@@ -109,27 +109,54 @@ def init(path: str = "rig.yaml") -> None:
 
 
 @app.command()
-def list(path: str = "rig.yaml") -> None:
+def list(
+    path: str = "rig.yaml",
+    show_packs: bool = typer.Option(False, "--packs", "-p", help="Show pack summary with tool counts"),
+) -> None:
     """List tools from installed packs."""
     cfg = load_config(path)
     registry, runtime = build_local(cfg)
     _ = runtime  # silence
 
-    table = Table(title="RIG Tools")
-    table.add_column("name")
-    table.add_column("risk")
-    table.add_column("pack")
-
-    pack_by_tool: Dict[str, str] = {}
     packs = load_selected_packs(cfg.packs)
+    pack_by_tool: Dict[str, str] = {}
+    pack_tool_counts: Dict[str, int] = {}
+
     for p in packs:
+        pack_tool_counts[p.name] = 0
         for t in p.tools:
             pack_by_tool[t.name] = f"{p.name}@{p.version}"
+            pack_tool_counts[p.name] += 1
 
-    for t in registry.list_tools():
-        table.add_row(t.name, t.risk_class, pack_by_tool.get(t.name, "unknown"))
+    if show_packs:
+        # Show pack summary
+        table = Table(title="Enabled Packs")
+        table.add_column("Pack")
+        table.add_column("Version")
+        table.add_column("Tools", justify="right")
+        table.add_column("Status")
 
-    print(table)
+        for p in packs:
+            meta = cfg.pack_metadata.get(p.name.replace("rig-pack-", ""))
+            status = "[green]enabled[/green]"
+            table.add_row(p.name, p.version, str(pack_tool_counts.get(p.name, 0)), status)
+
+        print(table)
+        print(f"\n[bold]Total:[/bold] {len(packs)} packs, {sum(pack_tool_counts.values())} tools")
+    else:
+        # Show tool details
+        table = Table(title="RIG Tools")
+        table.add_column("Name")
+        table.add_column("Risk")
+        table.add_column("Pack")
+        table.add_column("Description")
+
+        for t in registry.list_tools():
+            desc = (t.description[:40] + "...") if len(t.description) > 43 else t.description
+            table.add_row(t.name, t.risk_class, pack_by_tool.get(t.name, "unknown"), desc)
+
+        print(table)
+        print(f"\n[bold]Total:[/bold] {len(registry.list_tools())} tools from {len(packs)} packs")
 
 
 @app.command()
@@ -265,8 +292,10 @@ def install(
     version: Optional[str] = typer.Option(None, help="Specific version to install"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be installed"),
     index_url: str = typer.Option("", help="Custom pack index URL"),
+    no_enable: bool = typer.Option(False, "--no-enable", help="Don't auto-enable in rig.yaml"),
 ) -> None:
-    """Install a RIG pack from the pack index."""
+    """Install a RIG pack from the pack index and enable it in rig.yaml."""
+    from datetime import datetime
     from rig_core.pack_index import DEFAULT_INDEX_URL
 
     installer = PackInstaller()
@@ -279,10 +308,35 @@ def install(
             print(f"[green]Would install:[/green] {result.package} ({result.runtime})")
         else:
             print(f"[green]✓ Installed:[/green] {result.pack_id} → {result.package}@{result.version}")
+
+            # Auto-enable in rig.yaml unless --no-enable
+            if not no_enable:
+                try:
+                    config_path = "rig.yaml"
+                    if os.path.exists(config_path):
+                        cfg = load_config(config_path)
+                    else:
+                        cfg = default_config()
+
+                    # Add pack to packs list if not present
+                    if result.package not in cfg.packs:
+                        cfg.packs.append(result.package)
+
+                    # Update pack metadata
+                    cfg.pack_metadata[result.pack_id] = PackMetadata(
+                        version=result.version,
+                        source="pypi" if result.runtime == "python" else "npm",
+                        installed_at=datetime.utcnow().isoformat() + 'Z',
+                    )
+
+                    write_config(config_path, cfg)
+                    print(f"[green]✓ Enabled:[/green] {result.pack_id} in rig.yaml")
+                except Exception as e:
+                    print(f"[yellow]Warning:[/yellow] Could not update rig.yaml: {e}")
+
             print(f"\n[yellow]Next steps:[/yellow]")
-            print(f"  1. Add '{result.pack_id}' to your rig.yaml packs list")
-            print(f"  2. Run 'rig list' to see available tools")
-            print(f"  3. Run 'rig serve' to start the gateway")
+            print(f"  1. Run 'rig list' to see available tools")
+            print(f"  2. Run 'rig serve' to start the gateway")
     else:
         print(f"[red]✗ Installation failed:[/red] {result.error}")
         raise typer.Exit(1)

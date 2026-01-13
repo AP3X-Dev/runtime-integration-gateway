@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rig-pack-stripe"
+version = "0.1.0"
+description = "RIG Pack: Stripe payment processing tools"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "RIG Contributors"}]
+dependencies = [
+  "rig-core>=0.1.0",
+  "stripe>=7.0.0"
+]
+
+[project.entry-points."rig.packs"]
+rig-pack-stripe = "rig_pack_stripe.pack:PACK"
+
+[tool.setuptools]
+packages = ["rig_pack_stripe", "rig_pack_stripe.tools"]
+

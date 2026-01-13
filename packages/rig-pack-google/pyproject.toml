@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rig-pack-google"
+version = "0.1.0"
+description = "RIG Pack: Google Workspace (Sheets, Drive, Gmail)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "RIG Contributors"}]
+dependencies = [
+  "rig-core>=0.1.0",
+  "google-api-python-client>=2.0.0",
+  "google-auth>=2.0.0"
+]
+
+[project.entry-points."rig.packs"]
+rig-pack-google = "rig_pack_google.pack:PACK"
+
+[tool.setuptools]
+packages = ["rig_pack_google", "rig_pack_google.tools"]
