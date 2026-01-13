@@ -1,0 +1,12 @@
+{
+  "name": "@rig/pack-github",
+  "version": "0.1.0",
+  "description": "GitHub repository and issue management tools for RIG",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "keywords": ["rig", "github", "git"],
+  "dependencies": {
+    "@octokit/rest": "^20.0.0"
+  }
+}
+

@@ -1,0 +1,12 @@
+{
+  "name": "@rig/pack-slack",
+  "version": "0.1.0",
+  "description": "Slack messaging and collaboration tools for RIG",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "keywords": ["rig", "slack", "messaging"],
+  "dependencies": {
+    "@slack/web-api": "^7.0.0"
+  }
+}
+

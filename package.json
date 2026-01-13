@@ -3,6 +3,11 @@
   "private": true,
   "workspaces": [
     "packages/rig-node-runner",
-    "npm-packs/pack-echo"
+    "npm-packs/pack-echo",
+    "npm-packs/pack-slack",
+    "npm-packs/pack-stripe",
+    "npm-packs/pack-github",
+    "npm-packs/pack-twilio",
+    "npm-packs/pack-notion"
   ]
 }

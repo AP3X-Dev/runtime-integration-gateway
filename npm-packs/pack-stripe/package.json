@@ -1,0 +1,12 @@
+{
+  "name": "@rig/pack-stripe",
+  "version": "0.1.0",
+  "description": "Stripe payment processing tools for RIG",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "keywords": ["rig", "stripe", "payments"],
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
+

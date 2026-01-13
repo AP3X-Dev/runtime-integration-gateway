@@ -1,0 +1,12 @@
+{
+  "name": "@rig/pack-notion",
+  "version": "0.1.0",
+  "description": "Notion workspace integration tools for RIG",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "keywords": ["rig", "notion", "productivity"],
+  "dependencies": {
+    "@notionhq/client": "^2.2.0"
+  }
+}
+

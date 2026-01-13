@@ -1,0 +1,12 @@
+{
+  "name": "@rig/pack-twilio",
+  "version": "0.1.0",
+  "description": "Twilio SMS and voice tools for RIG",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "keywords": ["rig", "twilio", "sms", "voice"],
+  "dependencies": {
+    "twilio": "^4.0.0"
+  }
+}
+
