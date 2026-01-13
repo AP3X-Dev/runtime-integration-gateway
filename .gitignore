@@ -7,3 +7,7 @@ __pycache__/
 build/
 .rig/
 .pytest_cache/
+node_modules/
+
+# Internal planning documents
+PRP.md
