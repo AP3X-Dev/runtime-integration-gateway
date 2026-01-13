@@ -1,3 +1,7 @@
+<div align="center">
+  <img src=".github/images/rig_header.png" alt="RIG - Runtime Integration Gateway" width="800"/>
+</div>
+
 # RIG (Runtime Integration Gateway)
 
 RIG is a tool platform for AI agents that acts as an "SDK tool operating system."
