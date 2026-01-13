@@ -17,17 +17,80 @@ RIG is a tool platform for AI agents that acts as an "SDK tool operating system.
 - **MCP Bridge**: Compatibility layer for MCP clients
 - **Hub**: Optional hosted control plane for teams
 
-## Local quickstart
+## Quick Start
 
-Create a virtual environment, then from the repo root run:
+### Installation
+
+```powershell
+# Clone the repository
+git clone https://github.com/AP3X-Dev/runtime-integration-gateway.git
+cd runtime-integration-gateway
+
+# Install in development mode (Windows)
+.\install-dev.ps1
+
+# Or manually (cross-platform)
+pip install -e packages/rig-core
+pip install -e packages/rig-protocol-rgp
+pip install -e packages/rig-cli
+pip install -e packages/rig-bridge-mcp
+```
+
+### Add to PATH (Windows)
+
+```powershell
+# PowerShell (run as Administrator)
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$scriptsPath = "$env:LOCALAPPDATA\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts"
+[Environment]::SetEnvironmentVariable("Path", "$userPath;$scriptsPath", "User")
+
+# Restart your terminal, then verify
+rig --help
+```
+
+### Usage
 
 ```bash
-python -m pip install -U pip
-python -m pip install -e packages/rig-core
-python -m pip install -e packages/rig-protocol-rgp
-python -m pip install -e packages/rig-cli
-python -m pip install -e packages/rig-pack-echo
+# View available packs from the pack index
+rig packs --available
+
+# Install a pack (e.g., Stripe)
+rig install stripe
+
+# List installed tools
+rig list
+
+# Start the RGP server
+rig serve
+
+# Start the MCP server
+rig mcp
 ```
+
+## Available Packs
+
+| Pack | Tools | Description |
+|------|-------|-------------|
+| [stripe](packages/rig-pack-stripe) | 8 | Payment processing |
+| [twilio](packages/rig-pack-twilio) | 5 | SMS, voice, verification |
+| [slack](packages/rig-pack-slack) | 4 | Team messaging |
+| [sendgrid](packages/rig-pack-sendgrid) | 2 | Email delivery |
+| [github](packages/rig-pack-github) | 4 | Repository management |
+| [google](packages/rig-pack-google) | 3 | Sheets, Drive, Gmail |
+| [notion](packages/rig-pack-notion) | 4 | Workspace management |
+| [airtable](packages/rig-pack-airtable) | 3 | Database management |
+| [supabase](packages/rig-pack-supabase) | 4 | Backend services |
+| [elevenlabs](packages/rig-pack-elevenlabs) | 2 | AI voice synthesis |
+
+**Total: 39 tools across 10 packs**
+
+## Documentation
+
+- [Quickstart Guide](examples/quickstart.md) - 5-minute setup guide
+- [Milestone 2 Summary](docs/milestone-2-complete.md) - Pack ecosystem details
+- [Pack Index](https://raw.githubusercontent.com/AP3X-Dev/runtime-integration-gateway/master/specs/pack-index-example.json) - Available packs registry
+
+## Example Usage
 
 Initialize config:
 
@@ -47,7 +110,7 @@ List tools:
 rig list
 ```
 
-Call the echo tool:
+Call a tool:
 
 ```bash
 rig call echo '{"message":"hi"}'
