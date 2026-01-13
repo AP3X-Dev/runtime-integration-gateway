@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rig.dev/schemas/rtp/CallContext.schema.json",
+  "title": "CallContext",
+  "description": "RIG Tool Protocol (RTP) Call Context. Metadata passed with every tool invocation for tracing and multi-tenancy.",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant identifier for multi-tenant deployments.",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Unique request identifier for correlation and tracing.",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "actor": {
+      "type": "string",
+      "description": "Identity of the actor making the request (user ID, service account, etc.).",
+      "minLength": 1,
+      "maxLength": 256
+    }
+  },
+  "additionalProperties": false
+}
+

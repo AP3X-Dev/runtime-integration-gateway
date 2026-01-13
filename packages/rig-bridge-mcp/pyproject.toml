@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rig-bridge-mcp"
+version = "0.1.0"
+description = "RIG Bridge for MCP (stub)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "RIG Contributors"}]
+dependencies = [
+  "rig-core>=0.1.0"
+]
+
+[tool.setuptools]
+packages = ["rig_bridge_mcp"]

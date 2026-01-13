@@ -1,0 +1,6 @@
+{
+  "name": "@rig/pack-echo",
+  "version": "0.1.0",
+  "main": "index.cjs",
+  "type": "commonjs"
+}

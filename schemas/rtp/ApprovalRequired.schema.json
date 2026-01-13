@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rig.dev/schemas/rtp/ApprovalRequired.schema.json",
+  "title": "ApprovalRequired",
+  "description": "RIG Tool Protocol (RTP) Approval Required payload. Returned when a tool call requires explicit approval.",
+  "type": "object",
+  "required": ["token", "tool_name", "risk_class"],
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Approval token to be used with the approve/deny endpoints.",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "tool_name": {
+      "type": "string",
+      "description": "Name of the tool requiring approval."
+    },
+    "risk_class": {
+      "type": "string",
+      "description": "Risk class that triggered the approval requirement.",
+      "enum": ["read", "write", "infra", "money", "destructive"]
+    },
+    "args": {
+      "type": "object",
+      "description": "Sanitized arguments for the tool call (secrets redacted)."
+    },
+    "tenant_id": {
+      "type": ["string", "null"],
+      "description": "Tenant ID for multi-tenant scenarios.",
+      "default": null
+    },
+    "actor": {
+      "type": ["string", "null"],
+      "description": "Actor requesting the tool execution.",
+      "default": null
+    },
+    "requested_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when approval was requested.",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the approval token expires.",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
+

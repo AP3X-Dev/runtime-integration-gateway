@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rig.dev/schemas/rtp/ToolError.schema.json",
+  "title": "ToolError",
+  "description": "RIG Tool Protocol (RTP) Tool Error. Standardized error structure for tool execution failures.",
+  "type": "object",
+  "required": ["type", "message"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Standardized error type for consistent error handling.",
+      "enum": [
+        "validation_error",
+        "auth_error",
+        "permission_error",
+        "not_found",
+        "conflict",
+        "rate_limited",
+        "transient",
+        "timeout",
+        "upstream_error",
+        "policy_blocked",
+        "approval_required",
+        "internal_error"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error message.",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "Whether the operation can be retried.",
+      "default": false
+    },
+    "upstream_code": {
+      "type": ["string", "null"],
+      "description": "Original error code from upstream service (if applicable).",
+      "default": null
+    },
+    "remediation_hints": {
+      "type": "array",
+      "description": "Actionable hints for resolving the error.",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "description": "Correlation ID for tracing this error across systems.",
+      "default": null
+    }
+  },
+  "additionalProperties": false
+}
+

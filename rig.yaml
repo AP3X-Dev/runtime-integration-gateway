@@ -1,0 +1,9 @@
+packs:
+  - rig-pack-echo
+audit_db_path: .rig/rig_audit.sqlite
+server:
+  host: 127.0.0.1
+  port: 8787
+node_runner:
+  enabled: false
+  url: http://127.0.0.1:8790

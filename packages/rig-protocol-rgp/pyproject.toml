@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rig-protocol-rgp"
+version = "0.1.0"
+description = "RIG Gateway Protocol server (FastAPI)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "RIG Contributors"}]
+dependencies = [
+  "fastapi>=0.110.0",
+  "uvicorn>=0.23.0",
+  "pydantic>=2.0.0",
+  "rig-core>=0.1.0"
+]
+
+[tool.setuptools]
+packages = ["rig_protocol_rgp"]

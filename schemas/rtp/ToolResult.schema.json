@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rig.dev/schemas/rtp/ToolResult.schema.json",
+  "title": "ToolResult",
+  "description": "RIG Tool Protocol (RTP) Tool Result. Standardized response structure for tool execution.",
+  "type": "object",
+  "required": ["ok"],
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Whether the tool execution succeeded."
+    },
+    "output": {
+      "type": ["object", "null"],
+      "description": "Tool output data (present when ok=true).",
+      "default": null
+    },
+    "error": {
+      "description": "Error details (present when ok=false).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "message"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "validation_error",
+                "auth_error",
+                "permission_error",
+                "not_found",
+                "conflict",
+                "rate_limited",
+                "transient",
+                "timeout",
+                "upstream_error",
+                "policy_blocked",
+                "approval_required",
+                "internal_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean",
+              "default": false
+            },
+            "upstream_code": {
+              "type": ["string", "null"],
+              "default": null
+            },
+            "remediation_hints": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "correlation_id": {
+              "type": ["string", "null"],
+              "default": null
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "description": "Correlation ID for tracing this execution.",
+      "default": null
+    },
+    "pack": {
+      "type": ["string", "null"],
+      "description": "Name of the pack that provided this tool.",
+      "default": null
+    },
+    "pack_version": {
+      "type": ["string", "null"],
+      "description": "Version of the pack that provided this tool.",
+      "default": null
+    },
+    "interface_hash": {
+      "type": ["string", "null"],
+      "description": "Hash of the tool interface at execution time.",
+      "pattern": "^[a-f0-9]{64}$",
+      "default": null
+    },
+    "pack_set_version": {
+      "type": ["string", "null"],
+      "description": "Version identifier of the pack set snapshot used.",
+      "default": null
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": ["output"],
+        "properties": {
+          "output": {
+            "type": "object"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "required": ["error"],
+        "properties": {
+          "output": {
+            "type": "null"
+          },
+          "error": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
+}
+

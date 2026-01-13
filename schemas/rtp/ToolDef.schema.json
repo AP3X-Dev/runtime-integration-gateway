@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rig.dev/schemas/rtp/ToolDef.schema.json",
+  "title": "ToolDef",
+  "description": "RIG Tool Protocol (RTP) Tool Definition. Defines the contract for a tool including its schema, risk class, and metadata.",
+  "type": "object",
+  "required": ["name", "description", "input_schema", "output_schema", "error_schema"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique tool name. Must be a valid identifier (alphanumeric, underscores, hyphens).",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what the tool does.",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema (draft-07) defining the tool's input parameters.",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema (draft-07) defining the tool's output structure.",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      }
+    },
+    "error_schema": {
+      "type": "object",
+      "description": "JSON Schema (draft-07) defining tool-specific error details.",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      }
+    },
+    "auth_slots": {
+      "type": "array",
+      "description": "List of authentication slot names required by this tool (e.g., ['GITHUB_TOKEN', 'AWS_ACCESS_KEY']).",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_]+$"
+      },
+      "default": []
+    },
+    "risk_class": {
+      "type": "string",
+      "description": "Risk classification for policy enforcement.",
+      "enum": ["read", "write", "infra", "money", "destructive"],
+      "default": "read"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Optional tags for categorization and filtering.",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "policy_defaults": {
+      "type": "object",
+      "description": "Default policy settings for this tool (timeouts, retries, etc.).",
+      "properties": {
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "max_concurrency": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": true,
+      "default": {}
+    },
+    "examples": {
+      "type": "array",
+      "description": "Example invocations for documentation and testing.",
+      "items": {
+        "type": "object",
+        "required": ["input"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input": {
+            "type": "object"
+          },
+          "output": {
+            "type": "object"
+          }
+        }
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}
+

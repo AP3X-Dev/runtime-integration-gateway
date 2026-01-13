@@ -1,0 +1,511 @@
+openapi: 3.0.3
+info:
+  title: RIG Gateway Protocol (RGP)
+  version: 1.0.0
+  description: |
+    RIG Gateway Protocol (RGP) is the native HTTP API for discovering and invoking tools
+    managed by the RIG Runtime. It provides endpoints for tool discovery, invocation,
+    approval workflows, and audit queries.
+    
+    All tool calls are executed through the RIG Runtime pipeline which enforces:
+    - JSON Schema validation
+    - Policy enforcement
+    - Approval gates for risky operations
+    - Secrets injection
+    - Retry logic
+    - Audit logging
+  contact:
+    name: RIG Project
+    url: https://github.com/rig/rig
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8788
+    description: Local development server
+  - url: https://api.rig.dev
+    description: Production server (future)
+
+tags:
+  - name: health
+    description: Health check endpoints
+  - name: tools
+    description: Tool discovery and invocation
+  - name: approvals
+    description: Approval workflow for risky operations
+  - name: audit
+    description: Audit log queries (future)
+
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      description: Returns the health status of the RIG Gateway
+      operationId: getHealth
+      tags:
+        - health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                    example: ok
+
+  /v1/tools:
+    get:
+      summary: List all tools
+      description: Returns a list of all tools available in the current registry snapshot
+      operationId: listTools
+      tags:
+        - tools
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      responses:
+        '200':
+          description: List of tools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolDef'
+
+  /v1/tools/{name}:
+    get:
+      summary: Get tool definition
+      description: Returns the definition of a specific tool
+      operationId: getTool
+      tags:
+        - tools
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Tool name
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_-]+$'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      responses:
+        '200':
+          description: Tool definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDef'
+        '404':
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/tools/{name}:call:
+    post:
+      summary: Call a tool
+      description: |
+        Invokes a tool with the provided arguments. The call goes through the RIG Runtime
+        pipeline which enforces validation, policy, approvals, and audit logging.
+      operationId: callTool
+      tags:
+        - tools
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Tool name
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_-]+$'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallRequest'
+      responses:
+        '200':
+          description: Tool execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolResult'
+        '404':
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/approvals/{token}:approve:
+    post:
+      summary: Approve and execute a pending tool call
+      description: |
+        Approves a tool call that was previously blocked by policy and executes it.
+        The token is returned in the approval_required error from a previous tool call.
+      operationId: approveToolCall
+      tags:
+        - approvals
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Approval token from approval_required error
+          schema:
+            type: string
+            pattern: '^[a-f0-9-]{36}$'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      responses:
+        '200':
+          description: Tool execution result after approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolResult'
+        '404':
+          description: Approval token not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/approvals/{token}:deny:
+    post:
+      summary: Deny a pending tool call
+      description: |
+        Denies a tool call that was previously blocked by policy. The token is invalidated
+        and the tool call will not be executed.
+      operationId: denyToolCall
+      tags:
+        - approvals
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Approval token from approval_required error
+          schema:
+            type: string
+            pattern: '^[a-f0-9-]{36}$'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      responses:
+        '200':
+          description: Approval denied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - denied
+                properties:
+                  denied:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: "12345678-1234-1234-1234-123456789abc"
+        '404':
+          description: Approval token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/audit/query:
+    post:
+      summary: Query audit logs
+      description: |
+        Query audit logs for tool executions. Supports filtering by time range,
+        tenant, actor, tool name, and result status.
+
+        Note: This endpoint is planned for future implementation.
+      operationId: queryAuditLogs
+      tags:
+        - audit
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ActorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditQuery'
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditQueryResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    CorrelationId:
+      name: X-RIG-Correlation-ID
+      in: header
+      description: Correlation ID for tracing requests across systems
+      required: false
+      schema:
+        type: string
+        example: "req-abc-123-def"
+
+    TenantId:
+      name: X-RIG-Tenant-ID
+      in: header
+      description: Tenant identifier for multi-tenant deployments
+      required: false
+      schema:
+        type: string
+        example: "tenant-123"
+
+    ActorId:
+      name: X-RIG-Actor-ID
+      in: header
+      description: Identity of the actor making the request
+      required: false
+      schema:
+        type: string
+        example: "user@example.com"
+
+  schemas:
+    ToolDef:
+      type: object
+      required:
+        - name
+        - description
+        - input_schema
+        - output_schema
+        - error_schema
+      properties:
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9_-]+$'
+          example: "github_get_repo"
+        description:
+          type: string
+          example: "Get repository information from GitHub"
+        input_schema:
+          type: object
+          description: JSON Schema defining tool input parameters
+        output_schema:
+          type: object
+          description: JSON Schema defining tool output structure
+        error_schema:
+          type: object
+          description: JSON Schema defining tool-specific error details
+        auth_slots:
+          type: array
+          items:
+            type: string
+          example: ["GITHUB_TOKEN"]
+        risk_class:
+          type: string
+          enum: [read, write, infra, money, destructive]
+          default: read
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["github", "repository"]
+        policy_defaults:
+          type: object
+          additionalProperties: true
+        examples:
+          type: array
+          items:
+            type: object
+
+    CallRequest:
+      type: object
+      required:
+        - args
+      properties:
+        args:
+          type: object
+          description: Tool input arguments matching the tool's input_schema
+          example:
+            owner: "rig"
+            repo: "rig"
+        context:
+          type: object
+          description: Execution context (tenant_id, request_id, actor)
+          properties:
+            tenant_id:
+              type: string
+            request_id:
+              type: string
+            actor:
+              type: string
+
+    ToolResult:
+      type: object
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          description: Whether the tool execution succeeded
+        output:
+          type: object
+          nullable: true
+          description: Tool output (present when ok=true)
+        error:
+          $ref: '#/components/schemas/ToolError'
+        correlation_id:
+          type: string
+          nullable: true
+        pack:
+          type: string
+          nullable: true
+        pack_version:
+          type: string
+          nullable: true
+        interface_hash:
+          type: string
+          nullable: true
+          pattern: '^[a-f0-9]{64}$'
+        pack_set_version:
+          type: string
+          nullable: true
+
+    ToolError:
+      type: object
+      required:
+        - type
+        - message
+      properties:
+        type:
+          type: string
+          enum:
+            - validation_error
+            - auth_error
+            - permission_error
+            - not_found
+            - conflict
+            - rate_limited
+            - transient
+            - timeout
+            - upstream_error
+            - policy_blocked
+            - approval_required
+            - internal_error
+        message:
+          type: string
+        retryable:
+          type: boolean
+          default: false
+        upstream_code:
+          type: string
+          nullable: true
+        remediation_hints:
+          type: array
+          items:
+            type: string
+        correlation_id:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+
+    AuditQuery:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+        actor:
+          type: string
+        tool_name:
+          type: string
+        ok:
+          type: boolean
+          nullable: true
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+
+    AuditQueryResponse:
+      type: object
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    AuditEntry:
+      type: object
+      required:
+        - timestamp
+        - tool_name
+        - ok
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        tool_name:
+          type: string
+        args:
+          type: object
+        context:
+          type: object
+        ok:
+          type: boolean
+        output:
+          type: object
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ToolError'
+        correlation_id:
+          type: string
+        pack:
+          type: string
+        pack_version:
+          type: string
+

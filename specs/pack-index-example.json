@@ -1,0 +1,125 @@
+{
+  "api_version": 1,
+  "generated_at": "2026-01-13T00:00:00Z",
+  "packs": {
+    "echo": {
+      "display_name": "Echo",
+      "description": "Simple echo tool for testing",
+      "homepage": "https://github.com/rig-project/rig-pack-echo",
+      "tags": ["demo", "testing"],
+      "python": {
+        "package": "rig-pack-echo",
+        "min_rig": "0.1.0"
+      }
+    },
+    "notion": {
+      "display_name": "Notion",
+      "description": "Notion workspace integration",
+      "homepage": "https://notion.so",
+      "tags": ["productivity", "database"],
+      "python": {
+        "package": "rig-pack-notion",
+        "min_rig": "0.1.0"
+      },
+      "node": {
+        "package": "@rig/pack-notion",
+        "min_rig": "0.1.0"
+      }
+    },
+    "stripe": {
+      "display_name": "Stripe",
+      "description": "Stripe payment processing",
+      "homepage": "https://stripe.com",
+      "tags": ["payments", "money"],
+      "python": {
+        "package": "rig-pack-stripe",
+        "min_rig": "0.1.0"
+      }
+    },
+    "slack": {
+      "display_name": "Slack",
+      "description": "Slack messaging and collaboration",
+      "homepage": "https://slack.com",
+      "tags": ["communication", "messaging"],
+      "python": {
+        "package": "rig-pack-slack",
+        "min_rig": "0.1.0"
+      },
+      "node": {
+        "package": "@rig/pack-slack",
+        "min_rig": "0.1.0"
+      }
+    },
+    "github": {
+      "display_name": "GitHub",
+      "description": "GitHub repository and issue management",
+      "homepage": "https://github.com",
+      "tags": ["development", "git"],
+      "python": {
+        "package": "rig-pack-github",
+        "min_rig": "0.1.0"
+      }
+    },
+    "sendgrid": {
+      "display_name": "SendGrid",
+      "description": "SendGrid email delivery",
+      "homepage": "https://sendgrid.com",
+      "tags": ["email", "communication"],
+      "python": {
+        "package": "rig-pack-sendgrid",
+        "min_rig": "0.1.0"
+      }
+    },
+    "twilio": {
+      "display_name": "Twilio",
+      "description": "Twilio SMS and voice",
+      "homepage": "https://twilio.com",
+      "tags": ["sms", "voice", "communication"],
+      "python": {
+        "package": "rig-pack-twilio",
+        "min_rig": "0.1.0"
+      }
+    },
+    "google": {
+      "display_name": "Google Workspace",
+      "description": "Google Sheets, Drive, and Gmail",
+      "homepage": "https://workspace.google.com",
+      "tags": ["productivity", "google"],
+      "python": {
+        "package": "rig-pack-google",
+        "min_rig": "0.1.0"
+      }
+    },
+    "airtable": {
+      "display_name": "Airtable",
+      "description": "Airtable database and collaboration",
+      "homepage": "https://airtable.com",
+      "tags": ["database", "productivity"],
+      "python": {
+        "package": "rig-pack-airtable",
+        "min_rig": "0.1.0"
+      }
+    },
+    "supabase": {
+      "display_name": "Supabase",
+      "description": "Supabase backend as a service",
+      "homepage": "https://supabase.com",
+      "tags": ["database", "backend"],
+      "python": {
+        "package": "rig-pack-supabase",
+        "min_rig": "0.1.0"
+      }
+    },
+    "elevenlabs": {
+      "display_name": "ElevenLabs",
+      "description": "ElevenLabs text-to-speech",
+      "homepage": "https://elevenlabs.io",
+      "tags": ["audio", "tts"],
+      "python": {
+        "package": "rig-pack-elevenlabs",
+        "min_rig": "0.1.0"
+      }
+    }
+  }
+}
+
