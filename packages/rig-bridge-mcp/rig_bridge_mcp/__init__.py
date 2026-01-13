@@ -1,11 +1,12 @@
 """RIG Bridge for MCP.
 
-This package is intentionally a stub in v0.
+Exports RIG tools as an MCP (Model Context Protocol) server.
 
-A full MCP implementation requires an MCP protocol library.
-The bridge should map MCP tool list and tool calls to RIG Registry and RIG Runtime.
+The bridge maps:
+- MCP tool list -> RIG Registry
+- MCP tool calls -> RIG Runtime execution pipeline
 """
 
-from .stub import not_implemented
+from .bridge import RigMcpBridge, McpBridgeConfig, create_mcp_bridge
 
-__all__ = ["not_implemented"]
+__all__ = ["RigMcpBridge", "McpBridgeConfig", "create_mcp_bridge"]

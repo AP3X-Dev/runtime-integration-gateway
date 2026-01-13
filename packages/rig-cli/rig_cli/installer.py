@@ -140,6 +140,74 @@ class PackInstaller:
             print(f"[red]Failed to uninstall {package}:[/red] {e}")
             return False
 
+    def _install_npm_package(self, package: str, version: Optional[str] = None) -> tuple[bool, str]:
+        """
+        Install a Node package using npm.
+
+        Args:
+            package: Package name
+            version: Optional version specifier
+
+        Returns:
+            Tuple of (success, installed_version)
+        """
+        if version:
+            package_spec = f"{package}@{version}"
+        else:
+            package_spec = package
+
+        cmd = ["npm", "install", package_spec]
+
+        try:
+            print(f"[yellow]Installing {package_spec}...[/yellow]")
+            subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+            # Get installed version from package.json
+            try:
+                result = subprocess.run(
+                    ["npm", "list", package, "--json"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode == 0:
+                    import json
+                    data = json.loads(result.stdout)
+                    deps = data.get("dependencies", {})
+                    installed_version = deps.get(package, {}).get("version", version or "unknown")
+                else:
+                    installed_version = version or "unknown"
+            except Exception:
+                installed_version = version or "unknown"
+
+            print(f"[green]✓[/green] Installed {package} {installed_version}")
+            return True, installed_version
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            print(f"[red]Failed to install {package}:[/red] {error_msg}")
+            return False, ""
+
+    def _uninstall_npm_package(self, package: str) -> bool:
+        """
+        Uninstall a Node package using npm.
+
+        Args:
+            package: Package name
+
+        Returns:
+            True if successful
+        """
+        cmd = ["npm", "uninstall", package]
+
+        try:
+            print(f"[yellow]Uninstalling {package}...[/yellow]")
+            subprocess.check_call(cmd, stdout=subprocess.DEVNULL)
+            print(f"[green]✓[/green] Uninstalled {package}")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"[red]Failed to uninstall {package}:[/red] {e}")
+            return False
+
     def install(
         self,
         pack_id: str,
@@ -194,37 +262,8 @@ class PackInstaller:
         # Install based on runtime
         if runtime == "python":
             success, installed_version = self._install_python_package(package, version)
-            if not success:
-                return InstallResult(
-                    success=False,
-                    pack_id=pack_id,
-                    package=package,
-                    version="",
-                    runtime=runtime,
-                    error="Installation failed",
-                )
-
-            # Update lockfile
-            lock = RigLock.load(self.lock_path)
-            lock.index_url = index_url
-            lock.index_generated_at = index.generated_at
-
-            integrity = compute_package_hash(package, installed_version)
-            locked_pack = LockedPack(
-                pack_id=pack_id, package=package, version=installed_version, runtime=runtime, integrity=integrity
-            )
-            lock.add_pack(locked_pack)
-            lock.save(self.lock_path)
-
-            return InstallResult(
-                success=True,
-                pack_id=pack_id,
-                package=package,
-                version=installed_version,
-                runtime=runtime,
-                message=f"Installed {package} {installed_version}",
-            )
-
+        elif runtime == "node":
+            success, installed_version = self._install_npm_package(package, version)
         else:
             return InstallResult(
                 success=False,
@@ -232,8 +271,39 @@ class PackInstaller:
                 package=package,
                 version="",
                 runtime=runtime,
-                error=f"Runtime '{runtime}' not yet supported",
+                error=f"Runtime '{runtime}' not supported",
             )
+
+        if not success:
+            return InstallResult(
+                success=False,
+                pack_id=pack_id,
+                package=package,
+                version="",
+                runtime=runtime,
+                error="Installation failed",
+            )
+
+        # Update lockfile
+        lock = RigLock.load(self.lock_path)
+        lock.index_url = index_url
+        lock.index_generated_at = index.generated_at
+
+        integrity = compute_package_hash(package, installed_version)
+        locked_pack = LockedPack(
+            pack_id=pack_id, package=package, version=installed_version, runtime=runtime, integrity=integrity
+        )
+        lock.add_pack(locked_pack)
+        lock.save(self.lock_path)
+
+        return InstallResult(
+            success=True,
+            pack_id=pack_id,
+            package=package,
+            version=installed_version,
+            runtime=runtime,
+            message=f"Installed {package} {installed_version}",
+        )
 
     def uninstall(self, pack_id: str, remove_package: bool = False) -> bool:
         """
@@ -263,9 +333,108 @@ class PackInstaller:
         if remove_package:
             if locked_pack.runtime == "python":
                 return self._uninstall_python_package(locked_pack.package)
+            elif locked_pack.runtime == "node":
+                return self._uninstall_npm_package(locked_pack.package)
             else:
-                print(f"[yellow]Package removal not yet supported for runtime '{locked_pack.runtime}'[/yellow]")
+                print(f"[yellow]Package removal not supported for runtime '{locked_pack.runtime}'[/yellow]")
                 return True
 
         return True
+
+    def update(
+        self,
+        pack_id: str,
+        version: Optional[str] = None,
+        index_url: str = DEFAULT_INDEX_URL,
+        dry_run: bool = False,
+    ) -> InstallResult:
+        """
+        Update a pack to a newer version.
+
+        Args:
+            pack_id: Pack ID to update
+            version: Specific version to update to (None = latest)
+            index_url: Pack index URL
+            dry_run: If True, don't actually update
+
+        Returns:
+            InstallResult
+        """
+        # Load lockfile to get current version
+        lock = RigLock.load(self.lock_path)
+        locked_pack = lock.get_pack(pack_id)
+
+        if not locked_pack:
+            return InstallResult(
+                success=False,
+                pack_id=pack_id,
+                package="",
+                version="",
+                runtime="",
+                error=f"Pack '{pack_id}' not installed",
+            )
+
+        current_version = locked_pack.version
+        runtime = locked_pack.runtime
+
+        if dry_run:
+            print(f"[yellow]Would update {pack_id} from {current_version} to {version or 'latest'}[/yellow]")
+            return InstallResult(
+                success=True,
+                pack_id=pack_id,
+                package=locked_pack.package,
+                version=version or "latest",
+                runtime=runtime,
+                message=f"Dry run: would update from {current_version}",
+            )
+
+        # Uninstall current version
+        print(f"[yellow]Updating {pack_id} from {current_version}...[/yellow]")
+        self.uninstall(pack_id, remove_package=True)
+
+        # Install new version
+        result = self.install(pack_id, runtime=runtime, version=version, index_url=index_url, dry_run=False)
+
+        if result.success:
+            print(f"[green]✓[/green] Updated {pack_id} from {current_version} to {result.version}")
+
+        return result
+
+    def verify_integrity(self, pack_id: Optional[str] = None) -> bool:
+        """
+        Verify integrity of installed packs.
+
+        Args:
+            pack_id: Specific pack to verify (None = verify all)
+
+        Returns:
+            True if all verified packs match their integrity hashes
+        """
+        lock = RigLock.load(self.lock_path)
+
+        packs_to_verify = [lock.get_pack(pack_id)] if pack_id else list(lock.packs.values())
+        packs_to_verify = [p for p in packs_to_verify if p is not None]
+
+        if not packs_to_verify:
+            print("[yellow]No packs to verify[/yellow]")
+            return True
+
+        all_valid = True
+        for pack in packs_to_verify:
+            if not pack.integrity:
+                print(f"[yellow]⚠[/yellow] {pack.pack_id}: No integrity hash recorded")
+                continue
+
+            # Recompute hash
+            current_hash = compute_package_hash(pack.package, pack.version)
+
+            if current_hash == pack.integrity:
+                print(f"[green]✓[/green] {pack.pack_id}: Integrity verified")
+            else:
+                print(f"[red]✗[/red] {pack.pack_id}: Integrity mismatch!")
+                print(f"  Expected: {pack.integrity}")
+                print(f"  Got:      {current_hash}")
+                all_valid = False
+
+        return all_valid
 

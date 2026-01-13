@@ -36,7 +36,15 @@ def build_local(cfg: RigConfig) -> tuple[ToolRegistry, RigRuntime]:
     _ensure_rig_dir()
     audit = AuditLog(cfg.audit_db_path)
     registry = ToolRegistry()
-    policy = Policy()
+
+    # Build policy from config
+    policy = Policy(
+        allowed_tools=set(cfg.policy.allowed_tools) if cfg.policy.allowed_tools else None,
+        require_approval_for=set(cfg.policy.require_approval_for),
+        timeout_seconds=cfg.policy.timeout_seconds,
+        retries=cfg.policy.retries,
+    )
+
     secrets = SecretsStore()
     runtime = RigRuntime(policy=policy, secrets=secrets, audit=audit)
 
@@ -189,6 +197,45 @@ def serve(path: str = "rig.yaml", host: Optional[str] = None, port: Optional[int
 
 
 @app.command()
+def mcp(
+    path: str = "rig.yaml",
+    transport: str = typer.Option("stdio", help="Transport: stdio, http, sse"),
+    host: str = typer.Option("127.0.0.1", help="Host for HTTP transport"),
+    port: int = typer.Option(8789, help="Port for HTTP transport"),
+    debug: bool = typer.Option(False, help="Enable debug mode"),
+) -> None:
+    """Run the MCP server (Model Context Protocol)."""
+    try:
+        from rig_bridge_mcp import RigMcpBridge, McpBridgeConfig
+    except ImportError:
+        print("[red]Error:[/red] rig-bridge-mcp not installed")
+        print("Install with: pip install rig-bridge-mcp")
+        raise typer.Exit(1)
+
+    cfg = load_config(path)
+    registry, runtime = build_local(cfg)
+
+    # Create MCP bridge config
+    bridge_config = McpBridgeConfig(
+        transport=transport,
+        host=host,
+        port=port,
+        debug=debug,
+    )
+
+    # Create and start MCP bridge
+    bridge = RigMcpBridge(registry, runtime, bridge_config)
+
+    print(f"[green]Starting RIG MCP Server[/green]")
+    print(f"Transport: {transport}")
+    if transport != "stdio":
+        print(f"Address: {host}:{port}")
+    print(f"Tools: {len(registry.list_tools())}")
+
+    bridge.serve()
+
+
+@app.command()
 def call(
     tool: str,
     args_json: str,
@@ -255,6 +302,45 @@ def uninstall(
             print(f"[yellow]Note:[/yellow] Package not removed. Use --remove-package to remove it.")
     else:
         print(f"[red]✗ Uninstall failed[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def update(
+    pack: str,
+    version: Optional[str] = typer.Option(None, help="Specific version to update to"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be updated"),
+    index_url: str = typer.Option("", help="Custom pack index URL"),
+) -> None:
+    """Update a RIG pack to a newer version."""
+    from rig_core.pack_index import DEFAULT_INDEX_URL
+
+    installer = PackInstaller()
+    url = index_url or DEFAULT_INDEX_URL
+
+    result = installer.update(pack, version=version, index_url=url, dry_run=dry_run)
+
+    if result.success:
+        if dry_run:
+            print(f"[green]Would update:[/green] {result.pack_id} to {result.version}")
+        else:
+            print(f"[green]✓ Updated:[/green] {result.pack_id} → {result.version}")
+    else:
+        print(f"[red]✗ Update failed:[/red] {result.error}")
+        raise typer.Exit(1)
+
+
+@app.command()
+def verify(
+    pack: Optional[str] = typer.Argument(None, help="Specific pack to verify (omit to verify all)"),
+) -> None:
+    """Verify integrity of installed packs."""
+    installer = PackInstaller()
+
+    if installer.verify_integrity(pack):
+        print(f"[green]✓ All verified packs have valid integrity hashes[/green]")
+    else:
+        print(f"[red]✗ Some packs failed integrity verification[/red]")
         raise typer.Exit(1)
 
 

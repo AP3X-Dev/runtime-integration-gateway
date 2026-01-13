@@ -1,14 +1,21 @@
-# RIG
+# RIG (Runtime Integration Gateway)
 
-RIG is the Runtime Integration Gateway.
+RIG is a tool platform for AI agents that acts as an "SDK tool operating system."
 
-This repo is a v0 starter implementation with:
-- RTP: tool schema and call contract
-- RIG Registry: tool catalog and interface hashing
-- RIG Runtime: validation, policy gates, approvals, retries, audit
-- RGP: HTTP discovery and invocation
-- rig CLI
-- One demo pack: rig-pack-echo
+## Core Functions
+
+- **Turns SDKs into tools** - Install "packs" (pip or npm packages) that wrap SDKs and expose them as structured tools with JSON schemas
+- **Runs tools safely** - Enforces validation, secrets isolation, policies, approvals, retries, and audit logging through RIG Runtime
+- **Exports as MCP** - Instantly exposes your tool catalog as an MCP server via RIG Bridge
+
+## Key Architecture
+
+- **Packs**: pip/npm packages that wrap SDKs (like "drivers")
+- **Registry**: Tool discovery and version management
+- **Runtime**: Policy enforcement kernel (approvals, secrets, retries, audit)
+- **RGP**: Native API for calling tools
+- **MCP Bridge**: Compatibility layer for MCP clients
+- **Hub**: Optional hosted control plane for teams
 
 ## Local quickstart
 
