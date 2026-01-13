@@ -480,7 +480,6 @@ rolls back on induced failure
 Milestone 1: RIG Standard hardening
 
 Freeze RTP schemas and publish them in repo
-
 Finalize RSP for python and node
 
 Finalize RGP OpenAPI spec
@@ -571,4 +570,4 @@ Add one real python pack plus contract tests
 
 Add one real node pack plus contract tests
 
-Write docs: quickstart, pack author guide, policy guide, MCP export guide
+Write docs: quickstart, pack author guide, policy guide, MCP export guideose
